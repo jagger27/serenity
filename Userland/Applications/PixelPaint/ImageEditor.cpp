@@ -402,14 +402,13 @@ void ImageEditor::scale_by(float scale_delta)
         clamped_scale(scale_delta);
         relayout();
     }
-
 }
 
 void ImageEditor::reset_scale_and_position()
 {
     if (m_scale != 1.0f)
         m_scale = 1.0f;
-    
+
     m_pan_origin = Gfx::FloatPoint(0, 0);
     relayout();
 }
