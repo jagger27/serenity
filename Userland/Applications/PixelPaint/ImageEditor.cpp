@@ -370,15 +370,19 @@ Layer* ImageEditor::layer_at_editor_position(const Gfx::IntPoint& editor_positio
     return nullptr;
 }
 
-void ImageEditor::scale_centered_on_position(const Gfx::IntPoint& position, float scale_delta)
+void ImageEditor::clamped_scale(float scale_delta)
 {
-    auto old_scale = m_scale;
-
     m_scale += scale_delta;
     if (m_scale < 0.1f)
         m_scale = 0.1f;
     if (m_scale > 100.0f)
         m_scale = 100.0f;
+}
+
+void ImageEditor::scale_centered_on_position(const Gfx::IntPoint& position, float scale_delta)
+{
+    auto old_scale = m_scale;
+    clamped_scale(scale_delta);
 
     auto focus_point = Gfx::FloatPoint(
         m_pan_origin.x() - ((float)position.x() - (float)width() / 2.0) / old_scale,
@@ -390,6 +394,15 @@ void ImageEditor::scale_centered_on_position(const Gfx::IntPoint& position, floa
 
     if (old_scale != m_scale)
         relayout();
+}
+
+void ImageEditor::scale_by(float scale_delta)
+{
+    if (scale_delta != 0) {
+        clamped_scale(scale_delta);
+        relayout();
+    }
+
 }
 
 void ImageEditor::reset_scale_and_position()
