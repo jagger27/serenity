@@ -163,6 +163,22 @@ OwnPtr<Gfx::Painter> CanvasRenderingContext2D::painter()
     return make<Gfx::Painter>(*m_element->bitmap());
 }
 
+void CanvasRenderingContext2D::fill_text(const String& text, float x, float y, Optional<double> max_width)
+{
+    if (max_width.has_value() && max_width.value() <= 0)
+        return;
+
+    auto painter = this->painter();
+    if (!painter)
+        return;
+
+    // FIXME: painter only supports integer rects for text right now, so this effectively chops off any fractional position
+    auto text_rect = Gfx::IntRect(x, y, max_width.has_value() ? max_width.value() : painter->font().width(text), painter->font().glyph_height());
+    auto transformed_rect = m_transform.map(text_rect);
+    painter->draw_text(transformed_rect, text, Gfx::TextAlignment::TopLeft, m_fill_style);
+    did_draw(transformed_rect.to<float>());
+}
+
 void CanvasRenderingContext2D::begin_path()
 {
     m_path = Gfx::Path();
@@ -188,13 +204,21 @@ void CanvasRenderingContext2D::quadratic_curve_to(float cx, float cy, float x, f
     m_path.quadratic_bezier_curve_to({ cx, cy }, { x, y });
 }
 
-void CanvasRenderingContext2D::arc(float x, float y, float radius, float start_angle, float end_angle, bool counter_clockwise)
+DOM::ExceptionOr<void> CanvasRenderingContext2D::arc(float x, float y, float radius, float start_angle, float end_angle, bool counter_clockwise)
 {
-    ellipse(x, y, radius, radius, 0, start_angle, end_angle, counter_clockwise);
+    if (radius < 0)
+        return DOM::IndexSizeError::create(String::formatted("The radius provided ({}) is negative.", radius));
+    return ellipse(x, y, radius, radius, 0, start_angle, end_angle, counter_clockwise);
 }
 
-void CanvasRenderingContext2D::ellipse(float x, float y, float radius_x, float radius_y, float rotation, float start_angle, float end_angle, bool counter_clockwise)
+DOM::ExceptionOr<void> CanvasRenderingContext2D::ellipse(float x, float y, float radius_x, float radius_y, float rotation, float start_angle, float end_angle, bool counter_clockwise)
 {
+    if (radius_x < 0)
+        return DOM::IndexSizeError::create(String::formatted("The major-axis radius provided ({}) is negative.", radius_x));
+
+    if (radius_y < 0)
+        return DOM::IndexSizeError::create(String::formatted("The minor-axis radius provided ({}) is negative.", radius_y));
+
     if ((!counter_clockwise && (end_angle - start_angle) >= M_TAU)
         || (counter_clockwise && (start_angle - end_angle) >= M_TAU)) {
         start_angle = 0;
@@ -245,6 +269,7 @@ void CanvasRenderingContext2D::ellipse(float x, float y, float radius_x, float r
     m_path.elliptical_arc_to(end_point, { radius_x, radius_y }, rotation, delta_theta > M_PI, !counter_clockwise);
 
     m_path.close();
+    return {};
 }
 
 void CanvasRenderingContext2D::rect(float x, float y, float width, float height)
