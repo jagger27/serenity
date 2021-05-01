@@ -1,4 +1,5 @@
 add_subdirectory(About)
+add_subdirectory(AddressBook)
 add_subdirectory(Browser)
 add_subdirectory(Calculator)
 add_subdirectory(Calendar)
