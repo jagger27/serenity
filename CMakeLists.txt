@@ -60,6 +60,12 @@ add_custom_target(grub-image
     USES_TERMINAL
 )
 
+add_custom_target(generate-contacts
+    COMMAND ${CMAKE_COMMAND} -E env "SERENITY_SOURCE_DIR=${CMAKE_SOURCE_DIR}" "SERENITY_ARCH=${SERENITY_ARCH}" ${CMAKE_SOURCE_DIR}/Meta/generate-contacts.py
+    BYPRODUCTS ${CMAKE_BINARY_DIR}/Root/res/contacts.json
+	USES_TERMINAL
+)
+
 add_custom_target(lint-shell-scripts
     COMMAND ${CMAKE_SOURCE_DIR}/Meta/lint-shell-scripts.sh
     USES_TERMINAL
@@ -164,6 +170,8 @@ if (NOT ${CMAKE_HOST_SYSTEM_NAME} MATCHES SerenityOS)
     #        Disable -Werror for now.
     add_compile_options(-Werror)
 endif()
+
+add_compile_options(-O2)
 
 add_compile_options(-Wall)
 add_compile_options(-Wextra)
